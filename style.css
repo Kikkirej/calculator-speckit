@@ -20,6 +20,9 @@
   padding: 0;
 }
 
+/* Ensure [hidden] always wins over layout-specific display rules (e.g. display:grid) */
+[hidden] { display: none !important; }
+
 /* Viewport centering — Decision 2 in research.md */
 body {
   display: grid;
