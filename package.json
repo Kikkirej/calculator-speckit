@@ -1,0 +1,7 @@
+{
+  "type": "module",
+  "scripts": {
+    "test": "node tests/run.js",
+    "check": "node --check src/calc.js src/ui.js tests/harness.js tests/run.js"
+  }
+}

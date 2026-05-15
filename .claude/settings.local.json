@@ -4,7 +4,11 @@
       "WebSearch",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:github.github.com)",
-      "Bash(specify init *)"
+      "Bash(specify init *)",
+      "Bash(bash *)",
+      "Bash(node tests/run.js)",
+      "Read(//usr/local/bin/**)",
+      "Read(//home/fabian/.nvm/versions/**)"
     ]
   }
 }
