@@ -8,6 +8,10 @@ import {
   clear,
   toggleMode,
   applyScientific,
+  inputToken,
+  inputConstant,
+  applyUnary,
+  toggleAngleUnit,
 } from '../src/calc.js';
 
 // ── User Story 1: Simple Mode ─────────────────────────────────────────────────
@@ -282,5 +286,361 @@ describe('evaluate with power operator', () => {
     s = inputDigit(s, '3');
     s = evaluate(s);
     assertEqual(s.currentValue, '8');
+  });
+});
+
+// ── New state fields (T005) ───────────────────────────────────────────────────
+
+describe('createState: new fields', () => {
+  it('includes expression: null', () => {
+    assertEqual(createState().expression, null);
+  });
+
+  it('includes parenDepth: 0', () => {
+    assertEqual(createState().parenDepth, 0);
+  });
+
+  it('includes angleUnit: degrees', () => {
+    assertEqual(createState().angleUnit, 'degrees');
+  });
+});
+
+describe('toggleMode: expression initialisation', () => {
+  it('sets expression to [] when switching to scientific', () => {
+    const s = toggleMode(createState());
+    assertDeepEqual(s.expression, []);
+  });
+
+  it('sets expression to null when switching back to simple', () => {
+    const s = toggleMode(toggleMode(createState()));
+    assertEqual(s.expression, null);
+  });
+
+  it('preserves angleUnit across toggle', () => {
+    let s = { ...createState(), angleUnit: 'radians' };
+    s = toggleMode(s);
+    assertEqual(s.angleUnit, 'radians');
+    s = toggleMode(s);
+    assertEqual(s.angleUnit, 'radians');
+  });
+});
+
+// ── inputDigit / inputDecimal in scientific mode (T009) ──────────────────────
+
+describe('inputDigit: scientific mode appends NumberToken', () => {
+  it('first digit appends a NumberToken to expression', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [] };
+    s = inputDigit(s, '5');
+    assertEqual(s.expression.length, 1);
+    assertEqual(s.expression[0].type, 'number');
+    assertEqual(s.expression[0].value, '5');
+  });
+
+  it('subsequent digit extends the last NumberToken', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [] };
+    s = inputDigit(s, '1');
+    s = inputDigit(s, '2');
+    s = inputDigit(s, '3');
+    assertEqual(s.expression.length, 1);
+    assertEqual(s.expression[0].value, '123');
+  });
+
+  it('starts a new NumberToken after justEvaluated', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [{ type: 'number', value: '5' }], justEvaluated: true };
+    s = inputDigit(s, '3');
+    assertEqual(s.expression[s.expression.length - 1].value, '3');
+    assertEqual(s.justEvaluated, false);
+  });
+
+  it('starts a new NumberToken after an operator token', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [
+      { type: 'number', value: '2' },
+      { type: 'operator', value: '+' },
+    ]};
+    s = inputDigit(s, '7');
+    assertEqual(s.expression.length, 3);
+    assertEqual(s.expression[2].value, '7');
+  });
+
+  it('is a no-op when isError', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [], isError: true };
+    s = inputDigit(s, '5');
+    assertEqual(s.expression.length, 0);
+  });
+});
+
+describe('inputDecimal: scientific mode', () => {
+  it('appends 0. token when expression is empty', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [] };
+    s = inputDecimal(s);
+    assertEqual(s.expression[0].value, '0.');
+  });
+
+  it('appends decimal to last NumberToken', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [{ type: 'number', value: '3' }] };
+    s = inputDecimal(s);
+    assertEqual(s.expression[0].value, '3.');
+  });
+
+  it('is a no-op if last NumberToken already has a decimal', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [{ type: 'number', value: '3.' }] };
+    s = inputDecimal(s);
+    assertEqual(s.expression[0].value, '3.');
+  });
+});
+
+// ── evaluate in scientific mode — flat expression (T012) ─────────────────────
+
+describe('evaluate: scientific mode flat expression', () => {
+  it('evaluates 2 + 3 = 5', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [
+      { type: 'number', value: '2' },
+      { type: 'operator', value: '+' },
+    ]};
+    s = inputDigit(s, '3');
+    s = evaluate(s);
+    assertEqual(s.currentValue, '5');
+    assertEqual(s.justEvaluated, true);
+    assertDeepEqual(s.expression, []);
+    assertEqual(s.parenDepth, 0);
+  });
+
+  it('sets error for non-finite result', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [
+      { type: 'number', value: '5' },
+      { type: 'operator', value: '/' },
+    ]};
+    s = inputDigit(s, '0');
+    s = evaluate(s);
+    assertEqual(s.isError, true);
+    assertEqual(s.currentValue, 'Error');
+  });
+});
+
+// ── inputToken (T016) ─────────────────────────────────────────────────────────
+
+describe('inputToken', () => {
+  it('appends an operator token', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [{ type: 'number', value: '2' }] };
+    s = inputToken(s, { type: 'operator', value: '+' });
+    assertEqual(s.expression.length, 2);
+    assertEqual(s.expression[1].type, 'operator');
+  });
+
+  it('appends open-paren and increments parenDepth', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [] };
+    s = inputToken(s, { type: 'paren', value: '(' });
+    assertEqual(s.parenDepth, 1);
+    assertEqual(s.expression[0].value, '(');
+  });
+
+  it('appends close-paren and decrements parenDepth', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [{ type: 'paren', value: '(' }], parenDepth: 1 };
+    s = inputToken(s, { type: 'paren', value: ')' });
+    assertEqual(s.parenDepth, 0);
+  });
+
+  it('ignores close-paren when parenDepth is 0', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [], parenDepth: 0 };
+    s = inputToken(s, { type: 'paren', value: ')' });
+    assertEqual(s.expression.length, 0);
+    assertEqual(s.parenDepth, 0);
+  });
+
+  it('is a no-op when isError', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [], isError: true };
+    s = inputToken(s, { type: 'operator', value: '+' });
+    assertEqual(s.expression.length, 0);
+  });
+});
+
+// ── evaluate: bracketed expressions and auto-close (T018) ────────────────────
+
+describe('evaluate: bracketed expressions', () => {
+  it('evaluates (2+3)*4 = 20', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [
+      { type: 'paren', value: '(' },
+      { type: 'number', value: '2' },
+      { type: 'operator', value: '+' },
+      { type: 'number', value: '3' },
+      { type: 'paren', value: ')' },
+      { type: 'operator', value: '*' },
+    ], parenDepth: 0 };
+    s = inputDigit(s, '4');
+    s = evaluate(s);
+    assertEqual(s.currentValue, '20');
+  });
+
+  it('auto-closes unclosed parens: (5+3 evaluates to 8', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [
+      { type: 'paren', value: '(' },
+      { type: 'number', value: '5' },
+      { type: 'operator', value: '+' },
+    ], parenDepth: 1 };
+    s = inputDigit(s, '3');
+    s = evaluate(s);
+    assertEqual(s.currentValue, '8');
+    assertEqual(s.parenDepth, 0);
+  });
+
+  it('sets error for div-by-zero inside brackets', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [
+      { type: 'paren', value: '(' },
+      { type: 'number', value: '5' },
+      { type: 'operator', value: '/' },
+    ], parenDepth: 1 };
+    s = inputDigit(s, '0');
+    s = evaluate(s);
+    assertEqual(s.isError, true);
+  });
+});
+
+// ── inputConstant (T025) ──────────────────────────────────────────────────────
+
+describe('inputConstant', () => {
+  it('inserts pi as a NumberToken', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [] };
+    s = inputConstant(s, 'pi');
+    assertEqual(s.expression.length, 1);
+    assertEqual(s.expression[0].type, 'number');
+    assertEqual(Math.abs(parseFloat(s.expression[0].value) - Math.PI) < 1e-10, true);
+  });
+
+  it('inserts e as a NumberToken', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [] };
+    s = inputConstant(s, 'e');
+    assertEqual(Math.abs(parseFloat(s.expression[0].value) - Math.E) < 1e-10, true);
+  });
+
+  it('inserts implicit * before constant when last token is a number', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [{ type: 'number', value: '2' }] };
+    s = inputConstant(s, 'pi');
+    assertEqual(s.expression.length, 3);
+    assertEqual(s.expression[1].type, 'operator');
+    assertEqual(s.expression[1].value, '*');
+  });
+
+  it('does not insert implicit * when last token is an operator', () => {
+    let s = { ...createState(), mode: 'scientific', expression: [{ type: 'operator', value: '+' }] };
+    s = inputConstant(s, 'pi');
+    assertEqual(s.expression[1].type, 'number');
+  });
+});
+
+// ── applyUnary (T027) ─────────────────────────────────────────────────────────
+
+describe('applyUnary: factorial', () => {
+  it('5! = 120', () => {
+    let s = { ...createState(), mode: 'scientific', currentValue: '5' };
+    s = applyUnary(s, 'factorial');
+    assertEqual(s.currentValue, '120');
+  });
+
+  it('0! = 1', () => {
+    let s = { ...createState(), mode: 'scientific', currentValue: '0' };
+    s = applyUnary(s, 'factorial');
+    assertEqual(s.currentValue, '1');
+  });
+
+  it('negative! sets error', () => {
+    let s = { ...createState(), mode: 'scientific', currentValue: '-1' };
+    s = applyUnary(s, 'factorial');
+    assertEqual(s.isError, true);
+  });
+
+  it('non-integer! sets error', () => {
+    let s = { ...createState(), mode: 'scientific', currentValue: '3.5' };
+    s = applyUnary(s, 'factorial');
+    assertEqual(s.isError, true);
+  });
+
+  it('171! sets error (overflow)', () => {
+    let s = { ...createState(), mode: 'scientific', currentValue: '171' };
+    s = applyUnary(s, 'factorial');
+    assertEqual(s.isError, true);
+  });
+
+  it('is a no-op when isError', () => {
+    let s = { ...createState(), mode: 'scientific', isError: true, currentValue: 'Error' };
+    s = applyUnary(s, 'factorial');
+    assertEqual(s.currentValue, 'Error');
+  });
+});
+
+describe('applyUnary: reciprocal', () => {
+  it('4 → 1/x = 0.25', () => {
+    let s = { ...createState(), mode: 'scientific', currentValue: '4' };
+    s = applyUnary(s, 'reciprocal');
+    assertEqual(s.currentValue, '0.25');
+  });
+
+  it('0 → 1/x sets error', () => {
+    let s = { ...createState(), mode: 'scientific', currentValue: '0' };
+    s = applyUnary(s, 'reciprocal');
+    assertEqual(s.isError, true);
+  });
+});
+
+describe('applyUnary: percent', () => {
+  it('50 → % = 0.5', () => {
+    let s = { ...createState(), mode: 'scientific', currentValue: '50' };
+    s = applyUnary(s, 'percent');
+    assertEqual(s.currentValue, '0.5');
+  });
+});
+
+// ── toggleAngleUnit (T031) ────────────────────────────────────────────────────
+
+describe('toggleAngleUnit', () => {
+  it('defaults to degrees', () => {
+    assertEqual(createState().angleUnit, 'degrees');
+  });
+
+  it('switches degrees to radians', () => {
+    const s = toggleAngleUnit(createState());
+    assertEqual(s.angleUnit, 'radians');
+  });
+
+  it('switches radians back to degrees', () => {
+    const s = toggleAngleUnit(toggleAngleUnit(createState()));
+    assertEqual(s.angleUnit, 'degrees');
+  });
+
+  it('does not change any other state field', () => {
+    const before = createState();
+    const after = toggleAngleUnit(before);
+    assertEqual(after.currentValue, before.currentValue);
+    assertEqual(after.mode, before.mode);
+    assertEqual(after.isError, before.isError);
+  });
+});
+
+// ── applyScientific with angleUnit (T033) ─────────────────────────────────────
+
+describe('applyScientific: respects angleUnit', () => {
+  it('sin(90 degrees) = 1', () => {
+    let s = { ...createState(), mode: 'scientific', currentValue: '90', angleUnit: 'degrees' };
+    s = applyScientific(s, 'sin');
+    assertEqual(s.currentValue, '1');
+  });
+
+  it('sin(pi/2 radians) = 1', () => {
+    const halfPi = String(Math.PI / 2);
+    let s = { ...createState(), mode: 'scientific', currentValue: halfPi, angleUnit: 'radians' };
+    s = applyScientific(s, 'sin');
+    assertEqual(s.currentValue, '1');
+  });
+
+  it('cos(0) = 1 regardless of angleUnit', () => {
+    let s1 = { ...createState(), mode: 'scientific', currentValue: '0', angleUnit: 'degrees' };
+    let s2 = { ...createState(), mode: 'scientific', currentValue: '0', angleUnit: 'radians' };
+    assertEqual(applyScientific(s1, 'cos').currentValue, '1');
+    assertEqual(applyScientific(s2, 'cos').currentValue, '1');
+  });
+
+  it('log(100) = 2 unaffected by angleUnit', () => {
+    let s = { ...createState(), mode: 'scientific', currentValue: '100', angleUnit: 'radians' };
+    s = applyScientific(s, 'log');
+    assertEqual(s.currentValue, '2');
   });
 });

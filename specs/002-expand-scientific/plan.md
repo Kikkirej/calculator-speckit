@@ -2,42 +2,44 @@
 
 **Branch**: `002-expand-scientific` | **Date**: 2026-05-15 | **Spec**: [spec.md](spec.md)
 
-**Input**: Feature specification from `specs/002-expand-scientific/spec.md`
+**Input**: Feature specification from `/specs/002-expand-scientific/spec.md`
 
 ## Summary
 
-Add bracketed expression support, additional scientific functions (π, e, n!, 1/x, %), and a DEG/RAD toggle to the existing scientific mode. A new `src/evaluator.js` module implements the Shunting-Yard algorithm (infix → RPN → evaluate). `src/calc.js` gains `inputToken`, `toggleAngleUnit`, and `applyUnary` exports and three new state fields. Simple mode is left completely unchanged.
+Add parentheses grouping, six new unary functions (π, e, !, 1/x, %, DEG/RAD toggle), and a degree/radian mode indicator to the scientific calculator view. The implementation replaces the current two-operand chain state machine in `calc.js` with a token-array + shunting-yard evaluator to correctly handle arbitrary expression nesting while keeping the existing simple-mode behaviour intact.
 
 ## Technical Context
 
-**Language/Version**: ES2020, HTML5, CSS3 — no transpilation, no build step
+**Language/Version**: ES2020+ vanilla JavaScript modules, HTML5, CSS3
 
-**Primary Dependencies**: None (zero runtime dependencies)
+**Primary Dependencies**: None — zero-dependency per constitution
 
-**Storage**: N/A — ephemeral in-page state only
+**Storage**: None — all state is in-memory JS objects; angle unit resets on page reload (spec assumption)
 
-**Testing**: Custom in-repo harness (`tests/harness.js`), run via `node tests/run.js`
+**Testing**: Custom in-repo test harness (`tests/harness.js`), run via `node tests/run.js` (Node-compatible, no test framework)
 
-**Target Platform**: Modern browser (Chrome/Firefox/Safari latest stable); Node 22 LTS for tests
+**Target Platform**: Static web page; tests run in Node.js (CI); production runs in modern browsers (Chrome, Firefox, Safari latest stable)
 
-**Project Type**: Client-side web application
+**Project Type**: Single-page web application
 
-**Performance Goals**: Instantaneous button response (<16 ms per interaction)
+**Performance Goals**: All button-press state transitions < 16 ms; shunting-yard evaluation of any displayable expression is effectively instantaneous
 
-**Constraints**: No npm packages; no external CDN; must pass Node 22 syntax check; WCAG 2.1 AA
+**Constraints**: No libraries; no build tools; no bundler; static files only; all test code must be Node-compatible
 
-**Scale/Scope**: ~3 modified source files + 2 new source files; ~32 new tests
+**Scale/Scope**: 3 source files (~300 lines of JS after feature addition); 1 test file expanded with new suites
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-| Gate | Status | Notes |
-|------|--------|-------|
-| No new runtime dependencies | PASS | `src/evaluator.js` uses only JS built-ins |
-| Simple mode unchanged | PASS | Existing state machine and tests untouched |
-| WCAG 2.1 AA | PASS | New elements reuse existing AA-verified color variables |
-| No `eval()` / `Function()` | PASS | Shunting-Yard replaces any need for dynamic eval |
+| Gate | Principle | Status | Notes |
+|------|-----------|--------|-------|
+| G-I  | Zero-dependency plain web stack | ✅ PASS | Shunting-yard implemented in ~40 lines of vanilla JS; no external libs |
+| G-II | Minimal code footprint | ✅ PASS | Token array + shunting-yard evaluator is the minimum required; no speculative abstractions |
+| G-III | TDD (NON-NEGOTIABLE) | ✅ PASS | Plan mandates failing tests before each implementation step |
+| G-IV | CI via GitHub Actions | ✅ PASS | Existing `ci.yml` unchanged; new tests run in the same `node tests/run.js` step |
+
+*Post-design re-check*: No constitution violations introduced by Phase 1 design (see `data-model.md`).
 
 ## Project Structure
 
@@ -50,27 +52,26 @@ specs/002-expand-scientific/
 ├── data-model.md        # Phase 1 output
 ├── quickstart.md        # Phase 1 output
 ├── contracts/
-│   ├── calc-api.md      # Phase 1 output
-│   └── ui-contract.md   # Phase 1 output
-└── tasks.md             # Phase 2 output (/speckit-tasks)
+│   └── ui-actions.md    # Phase 1 output
+└── tasks.md             # Phase 2 output (/speckit-tasks — not yet created)
 ```
 
 ### Source Code (repository root)
 
 ```text
+index.html          # Calculator markup — add new scientific buttons + angle indicator
+style.css           # Styles — new button layout rules + DEG/RAD indicator style
 src/
-├── calc.js          # Modified: inputToken, toggleAngleUnit, applyUnary; updated createState/toggleMode
-├── evaluator.js     # NEW: tokenise, shuntingYard, evalRPN
-└── ui.js            # Modified: expression-display render, angle-unit toggle, new button actions
-
+  calc.js           # Core logic — refactor state machine → token-array + shunting-yard
+  ui.js             # DOM event handling and render — wire new data-action values
 tests/
-├── harness.js           # Unchanged
-├── test-calc.js         # Modified: new tests for inputToken, toggleAngleUnit
-├── test-evaluator.js    # NEW: shunting-yard and RPN evaluator tests
-└── run.js               # Modified: imports test-evaluator.js
-
-index.html    # Modified: #expression-display, #angle-unit, new buttons
-style.css     # Modified: #expression-display and #angle-unit styles
+  harness.js        # Unchanged
+  run.js            # Unchanged
+  test-calc.js      # Expand with new test suites; update for new state shape
 ```
 
-**Structure Decision**: Single-project flat layout (existing convention). `evaluator.js` extracted as a separate module per Decision 7 (separation of concerns; independently testable).
+**Structure Decision**: Single-project layout (no new source directories). All changes are in-place modifications of existing files.
+
+## Complexity Tracking
+
+No constitution violations — complexity justification table not required.
