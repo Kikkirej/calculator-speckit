@@ -52,6 +52,21 @@ Exit code is `0` on all pass, `1` on any failure.
 node --check src/calc.js src/ui.js tests/harness.js tests/run.js
 ```
 
+## Live Demo (GitHub Pages)
+
+Once merged to `main`, the calculator is automatically deployed to GitHub Pages:
+
+```
+https://<your-github-username>.github.io/<repo-name>/
+```
+
+The deploy runs automatically after every successful merge to `main`. Check the **Actions** tab in GitHub for deploy status.
+
+To enable GitHub Pages for the first time:
+1. Go to **Settings → Pages** in your GitHub repository
+2. Set **Source** to `GitHub Actions`
+3. Merge a commit to `main` — the deploy job runs automatically
+
 ## CI (GitHub Actions)
 
 Push or open a PR to `main` — the CI workflow runs automatically:
@@ -60,7 +75,9 @@ Push or open a PR to `main` — the CI workflow runs automatically:
 .github/workflows/ci.yml
 ```
 
-Steps: checkout → setup Node 22 → syntax check → run tests
+Steps on push/PR: checkout → setup Node 22 → syntax check → run tests
+
+Additional step on push to `main` only: deploy → GitHub Pages
 
 ## Project Layout
 

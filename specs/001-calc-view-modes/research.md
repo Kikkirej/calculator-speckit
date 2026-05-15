@@ -86,3 +86,22 @@
 - Skip `setup-node` — rejected; ubuntu-latest Node version drifts over time.
 - Node 20 LTS — also valid but Node 22 LTS has longer support window.
 - Deno — rejected; not specified in constitution and adds unfamiliar tooling.
+
+---
+
+## Decision 6: GitHub Pages Deployment Strategy
+
+**Decision**: Add a `deploy` job to the existing `.github/workflows/ci.yml` using the official GitHub Actions trio: `actions/configure-pages@v5`, `actions/upload-pages-artifact@v3`, `actions/deploy-pages@v4`. The artifact path is `.` (repo root). The job is guarded by `if: github.ref == 'refs/heads/main' && github.event_name == 'push'` and depends on the `test` job passing (`needs: test`).
+
+**Rationale**:
+- Official GitHub Actions for Pages (`configure-pages` / `upload-pages-artifact` / `deploy-pages`) are the canonical approach as of 2024 — they use OIDC (`id-token: write`) instead of a Personal Access Token, so no secrets configuration is needed in the repo.
+- `upload-pages-artifact` with `path: '.'` uploads the entire repo root. GitHub Pages will serve `index.html` from the root automatically. A `.nojekyll` file is not strictly required but is added to suppress Jekyll processing and speed up the deploy (Jekyll would otherwise scan all files).
+- The `needs: test` dependency enforces that deployment only happens after the test job passes — broken code cannot reach production.
+- The `if:` guard on the deploy job means PRs run the test job but never trigger a deploy, keeping the Pages environment clean.
+- The deploy job is added to the existing `ci.yml` rather than a separate workflow file — fewer files to maintain, and the gate relationship between test and deploy is explicit in a single file.
+
+**Alternatives considered**:
+- `peaceiris/actions-gh-pages` — popular third-party action, but uses a PAT or deploy key (secret management overhead) and pushes to a `gh-pages` branch rather than using the native Pages API. Rejected in favour of the official secretless OIDC approach.
+- Separate `deploy.yml` workflow file — cleaner separation but requires duplicating the checkout step and makes the test-gate dependency implicit. Rejected; single file is simpler.
+- Manual deploy via `gh pages` CLI — not automatable in CI without credentials. Rejected.
+- Netlify / Vercel — third-party hosting, adds external dependency. Rejected; GitHub Pages is zero-cost and keeps hosting within the same platform as the source.
