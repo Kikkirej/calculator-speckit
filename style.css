@@ -186,6 +186,35 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+/* Expression display — shows expression being built in scientific mode */
+#expression-display {
+  display: block;
+  width: 100%;
+  font-size: 0.85rem;
+  font-family: 'Courier New', monospace;
+  text-align: right;
+  min-height: 1.5rem;
+  color: var(--color-text-muted);
+  padding: 0.25rem 1rem 0;
+  word-break: break-all;
+}
+
+/* Angle unit indicator (DEG / RAD) */
+#angle-unit {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  align-self: center;
+  margin-left: 0.5rem;
+}
+
+/* Angle toggle button — highlighted when RAD is active */
+#angle-toggle[aria-pressed="true"] {
+  background: var(--color-button-eq);
+  color: var(--color-text);
+}
+
 /* Responsive: keep layout intact on very small screens */
 @media (max-width: 360px) {
   #calculator {

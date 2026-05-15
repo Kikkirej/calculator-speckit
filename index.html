@@ -10,10 +10,13 @@
   <div id="calculator-wrapper">
     <div id="calculator">
 
+      <div id="expression-display" aria-live="polite" aria-atomic="true" hidden></div>
+
       <output id="display" aria-live="polite" aria-atomic="true">0</output>
 
       <div id="controls">
         <button id="mode-toggle" type="button" aria-pressed="false" data-action="mode-toggle">Scientific</button>
+        <span id="angle-unit" aria-live="polite" hidden>DEG</span>
       </div>
 
       <div id="mode-status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
@@ -50,6 +53,15 @@
         <button type="button" data-action="ln">ln</button>
         <button type="button" data-action="sqrt" aria-label="square root">√</button>
         <button type="button" data-action="power" aria-label="x to the power of y">x<sup>y</sup></button>
+
+        <button type="button" data-action="open-paren">(</button>
+        <button type="button" data-action="close-paren">)</button>
+        <button type="button" data-action="constant-pi">π</button>
+        <button type="button" data-action="constant-e">e</button>
+        <button type="button" data-action="factorial">n!</button>
+        <button type="button" data-action="reciprocal" aria-label="1 divided by x">1/x</button>
+        <button type="button" data-action="percent">%</button>
+        <button type="button" id="angle-toggle" data-action="toggle-angle" aria-pressed="false">DEG</button>
       </div>
 
     </div>
