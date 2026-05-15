@@ -1,74 +1,76 @@
-import { assert, test } from './harness.js';
+import { describe, it, assertEqual } from './harness.js';
 import { mapKeyToAction } from '../src/keyboard.js';
 
 // ── mapKeyToAction ────────────────────────────────────────────────────────────
 
-test('mapKeyToAction: digit 0', () => {
-  assert(mapKeyToAction('0') === 'digit-0');
-});
+describe('mapKeyToAction', () => {
+  it('digit 0', () => {
+    assertEqual(mapKeyToAction('0'), 'digit-0');
+  });
 
-test('mapKeyToAction: digit 9', () => {
-  assert(mapKeyToAction('9') === 'digit-9');
-});
+  it('digit 9', () => {
+    assertEqual(mapKeyToAction('9'), 'digit-9');
+  });
 
-test('mapKeyToAction: each digit 0-9 maps to digit-N', () => {
-  for (const d of '0123456789') {
-    assert(mapKeyToAction(d) === 'digit-' + d, `digit ${d}`);
-  }
-});
+  it('each digit 0-9 maps to digit-N', () => {
+    for (const d of '0123456789') {
+      assertEqual(mapKeyToAction(d), 'digit-' + d);
+    }
+  });
 
-test('mapKeyToAction: decimal point', () => {
-  assert(mapKeyToAction('.') === 'decimal');
-});
+  it('decimal point', () => {
+    assertEqual(mapKeyToAction('.'), 'decimal');
+  });
 
-test('mapKeyToAction: plus', () => {
-  assert(mapKeyToAction('+') === 'add');
-});
+  it('plus', () => {
+    assertEqual(mapKeyToAction('+'), 'add');
+  });
 
-test('mapKeyToAction: minus', () => {
-  assert(mapKeyToAction('-') === 'subtract');
-});
+  it('minus', () => {
+    assertEqual(mapKeyToAction('-'), 'subtract');
+  });
 
-test('mapKeyToAction: asterisk', () => {
-  assert(mapKeyToAction('*') === 'multiply');
-});
+  it('asterisk', () => {
+    assertEqual(mapKeyToAction('*'), 'multiply');
+  });
 
-test('mapKeyToAction: slash', () => {
-  assert(mapKeyToAction('/') === 'divide');
-});
+  it('slash', () => {
+    assertEqual(mapKeyToAction('/'), 'divide');
+  });
 
-test('mapKeyToAction: caret', () => {
-  assert(mapKeyToAction('^') === 'power');
-});
+  it('caret', () => {
+    assertEqual(mapKeyToAction('^'), 'power');
+  });
 
-test('mapKeyToAction: Enter', () => {
-  assert(mapKeyToAction('Enter') === 'equals');
-});
+  it('Enter', () => {
+    assertEqual(mapKeyToAction('Enter'), 'equals');
+  });
 
-test('mapKeyToAction: equals sign', () => {
-  assert(mapKeyToAction('=') === 'equals');
-});
+  it('equals sign', () => {
+    assertEqual(mapKeyToAction('='), 'equals');
+  });
 
-test('mapKeyToAction: Escape', () => {
-  assert(mapKeyToAction('Escape') === 'clear');
-});
+  it('Escape', () => {
+    assertEqual(mapKeyToAction('Escape'), 'clear');
+  });
 
-test('mapKeyToAction: Backspace', () => {
-  assert(mapKeyToAction('Backspace') === 'backspace');
-});
+  it('Backspace', () => {
+    assertEqual(mapKeyToAction('Backspace'), 'backspace');
+  });
 
-test('mapKeyToAction: unmapped letter returns null', () => {
-  assert(mapKeyToAction('a') === null);
-});
+  it('unmapped letter returns null', () => {
+    assertEqual(mapKeyToAction('a'), null);
+  });
 
-test('mapKeyToAction: unmapped F-key returns null', () => {
-  assert(mapKeyToAction('F1') === null);
-});
+  it('unmapped F-key returns null', () => {
+    assertEqual(mapKeyToAction('F1'), null);
+  });
 
-test('mapKeyToAction: Tab returns null', () => {
-  assert(mapKeyToAction('Tab') === null);
-});
+  it('Tab returns null', () => {
+    assertEqual(mapKeyToAction('Tab'), null);
+  });
 
-test('mapKeyToAction: empty string returns null', () => {
-  assert(mapKeyToAction('') === null);
+  it('empty string returns null', () => {
+    assertEqual(mapKeyToAction(''), null);
+  });
 });
