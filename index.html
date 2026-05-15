@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="calculator-wrapper">
+    <div id="calculator">
+
+      <output id="display" aria-live="polite" aria-atomic="true">0</output>
+
+      <div id="controls">
+        <button id="mode-toggle" type="button" aria-pressed="false" data-action="mode-toggle">Scientific</button>
+      </div>
+
+      <div id="mode-status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
+      <div id="buttons-simple">
+        <button type="button" data-action="clear">C</button>
+        <button type="button" data-action="divide">÷</button>
+        <button type="button" data-action="multiply">×</button>
+        <button type="button" data-action="subtract">−</button>
+
+        <button type="button" data-action="digit-7">7</button>
+        <button type="button" data-action="digit-8">8</button>
+        <button type="button" data-action="digit-9">9</button>
+        <button type="button" data-action="add">+</button>
+
+        <button type="button" data-action="digit-4">4</button>
+        <button type="button" data-action="digit-5">5</button>
+        <button type="button" data-action="digit-6">6</button>
+        <button type="button" data-action="equals" id="btn-equals">=</button>
+
+        <button type="button" data-action="digit-1">1</button>
+        <button type="button" data-action="digit-2">2</button>
+        <button type="button" data-action="digit-3">3</button>
+
+        <button type="button" data-action="digit-0" id="btn-zero">0</button>
+        <button type="button" data-action="decimal" aria-label="decimal point">.</button>
+      </div>
+
+      <div id="buttons-scientific" hidden>
+        <button type="button" data-action="sin">sin</button>
+        <button type="button" data-action="cos">cos</button>
+        <button type="button" data-action="tan">tan</button>
+        <button type="button" data-action="log">log</button>
+        <button type="button" data-action="ln">ln</button>
+        <button type="button" data-action="sqrt" aria-label="square root">√</button>
+        <button type="button" data-action="power" aria-label="x to the power of y">x<sup>y</sup></button>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module" src="src/ui.js"></script>
+</body>
+</html>
