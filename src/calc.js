@@ -289,3 +289,22 @@ export function applyUnary(state, fn) {
 export function toggleAngleUnit(state) {
   return { ...state, angleUnit: state.angleUnit === 'degrees' ? 'radians' : 'degrees' };
 }
+
+export function backspace(state) {
+  if (state.isError) return state;
+
+  if (state.mode === 'scientific') {
+    const expr = state.expression ?? [];
+    const last = expr[expr.length - 1];
+    if (!last || last.type !== 'number') return state;
+    const newVal = last.value.length <= 1 ? '0' : last.value.slice(0, -1);
+    const newExpr = [...expr];
+    newExpr[newExpr.length - 1] = { type: 'number', value: newVal };
+    return { ...state, expression: newExpr, currentValue: newVal };
+  }
+
+  const newVal = state.currentValue.length <= 1 || state.currentValue === '-'
+    ? '0'
+    : state.currentValue.slice(0, -1);
+  return { ...state, currentValue: newVal };
+}

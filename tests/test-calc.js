@@ -12,6 +12,7 @@ import {
   inputConstant,
   applyUnary,
   toggleAngleUnit,
+  backspace,
 } from '../src/calc.js';
 
 // ── User Story 1: Simple Mode ─────────────────────────────────────────────────
@@ -642,5 +643,64 @@ describe('applyScientific: respects angleUnit', () => {
     let s = { ...createState(), mode: 'scientific', currentValue: '100', angleUnit: 'radians' };
     s = applyScientific(s, 'log');
     assertEqual(s.currentValue, '2');
+  });
+});
+
+// ── backspace ─────────────────────────────────────────────────────────────────
+
+describe('backspace', () => {
+  it('single digit resets to 0', () => {
+    let s = { ...createState(), currentValue: '5' };
+    assertEqual(backspace(s).currentValue, '0');
+  });
+
+  it('already 0 stays 0', () => {
+    let s = createState();
+    assertEqual(backspace(s).currentValue, '0');
+  });
+
+  it('multi-digit removes last char', () => {
+    let s = { ...createState(), currentValue: '123' };
+    assertEqual(backspace(s).currentValue, '12');
+  });
+
+  it('two-digit number becomes single digit (not 0)', () => {
+    let s = { ...createState(), currentValue: '42' };
+    assertEqual(backspace(s).currentValue, '4');
+  });
+
+  it('bare minus resets to 0', () => {
+    let s = { ...createState(), currentValue: '-' };
+    assertEqual(backspace(s).currentValue, '0');
+  });
+
+  it('does nothing in error state', () => {
+    let s = { ...createState(), isError: true, currentValue: 'Error' };
+    assertEqual(backspace(s).currentValue, 'Error');
+  });
+
+  it('scientific mode: single digit NumberToken resets to 0', () => {
+    let s = toggleMode(createState());
+    s = inputDigit(s, '7');
+    s = backspace(s);
+    assertEqual(s.currentValue, '0');
+    assertEqual(s.expression[s.expression.length - 1].value, '0');
+  });
+
+  it('scientific mode: multi-digit NumberToken removes last char', () => {
+    let s = toggleMode(createState());
+    s = inputDigit(s, '4');
+    s = inputDigit(s, '2');
+    s = backspace(s);
+    assertEqual(s.currentValue, '4');
+    assertEqual(s.expression[s.expression.length - 1].value, '4');
+  });
+
+  it('scientific mode: no last NumberToken — state unchanged', () => {
+    let s = toggleMode(createState());
+    s = inputToken(s, { type: 'paren', value: '(' });
+    const before = s.currentValue;
+    s = backspace(s);
+    assertEqual(s.currentValue, before);
   });
 });

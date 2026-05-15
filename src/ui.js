@@ -11,7 +11,9 @@ import {
   inputConstant,
   applyUnary,
   toggleAngleUnit,
+  backspace,
 } from './calc.js';
+import { mapKeyToAction } from './keyboard.js';
 
 let state = createState();
 let prevMode = state.mode;
@@ -71,10 +73,7 @@ function render(s) {
   }
 }
 
-document.getElementById('calculator').addEventListener('click', (e) => {
-  const action = e.target.closest('[data-action]')?.dataset.action;
-  if (!action) return;
-
+function dispatch(action) {
   if (action === 'mode-toggle') {
     state = toggleMode(state);
   } else if (action.startsWith('digit-')) {
@@ -95,6 +94,8 @@ document.getElementById('calculator').addEventListener('click', (e) => {
     state = evaluate(state);
   } else if (action === 'clear') {
     state = clear(state);
+  } else if (action === 'backspace') {
+    state = backspace(state);
   } else if (['sin', 'cos', 'tan', 'log', 'ln', 'sqrt'].includes(action)) {
     state = applyScientific(state, action);
   } else if (action === 'open-paren') {
@@ -114,7 +115,20 @@ document.getElementById('calculator').addEventListener('click', (e) => {
   } else if (action === 'toggle-angle') {
     state = toggleAngleUnit(state);
   }
+}
 
+document.getElementById('calculator').addEventListener('click', (e) => {
+  const action = e.target.closest('[data-action]')?.dataset.action;
+  if (!action) return;
+  dispatch(action);
+  render(state);
+});
+
+document.addEventListener('keydown', (e) => {
+  const action = mapKeyToAction(e.key);
+  if (!action) return;
+  if (e.key === '/') e.preventDefault();
+  dispatch(action);
   render(state);
 });
 
